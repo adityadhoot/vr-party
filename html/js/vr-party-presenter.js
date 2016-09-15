@@ -3,8 +3,18 @@ var _sessionId;
 var _viewer;
 var _last_distance_to_target;
 var _view_data_bucket = 'vrparty';
+
+var _modelPosition  = new THREE.Vector3(0, 1, 0);
+var _modelTarget  = new THREE.Vector3(0, 1, 0);
+var _modelUp  = new THREE.Vector3(0, 1, 0);
+/*
+var _modelPosition  = [0, 1, 0];
+var _modelTarget = [0, 1, 0];
+var _modelUp = [0, 1, 0];
+*/
 var _default_models = {
-    'robot arm'     : 'dXJuOmFkc2sub2JqZWN0czpvcy5vYmplY3Q6c3RlYW1idWNrL1JvYm90QXJtLmR3Zng=',
+
+    /*'robot arm'     : 'dXJuOmFkc2sub2JqZWN0czpvcy5vYmplY3Q6c3RlYW1idWNrL1JvYm90QXJtLmR3Zng=',
     'welding robot' : 'dXJuOmFkc2sub2JqZWN0czpvcy5vYmplY3Q6dnJwYXJ0eS9BQkJfcm9ib3QuZHdm',
     'ergon chair'   : 'dXJuOmFkc2sub2JqZWN0czpvcy5vYmplY3Q6c3RlYW1idWNrL0VyZ29uLnppcA==',
     'differential'  : 'dXJuOmFkc2sub2JqZWN0czpvcy5vYmplY3Q6c3RlYW1idWNrL0RpZmYuZHdmeA==',
@@ -18,9 +28,17 @@ var _default_models = {
     'column'        : 'dXJuOmFkc2sub2JqZWN0czpvcy5vYmplY3Q6c3RlYW1idWNrL3RhYmxldDIuemlw',
     'tablet'        : 'dXJuOmFkc2sub2JqZWN0czpvcy5vYmplY3Q6c3RlYW1idWNrL2VneXB0NC56aXA=',
     //'trophy'        : 'dXJuOmFkc2sub2JqZWN0czpvcy5vYmplY3Q6dnJwYXJ0eS9Ucm9waHlfQW5nZWxIYWNrLmYzZA==',
-    //'cake'          : 'dXJuOmFkc2sub2JqZWN0czpvcy5vYmplY3Q6dnJwYXJ0eS9IQkM0LmR3Zng='
-    'movement'      : 'dXJuOmFkc2sub2JqZWN0czpvcy5vYmplY3Q6dnJwYXJ0eS9FVEFfNjQ5Ny0xX01vdmVtZW50X0NvcnJlY3RlZF8zLmR3Zg'
+    'cake'          : 'dXJuOmFkc2sub2JqZWN0czpvcy5vYmplY3Q6dnJwYXJ0eS9IQkM0LmR3Zng=',
+    'movement'      : 'dXJuOmFkc2sub2JqZWN0czpvcy5vYmplY3Q6dnJwYXJ0eS9FVEFfNjQ5Ny0xX01vdmVtZW50X0NvcnJlY3RlZF8zLmR3Zg',
+    */
+    'Model 1'       : {'urn': 'dXJuOmFkc2sub2JqZWN0czpvcy5vYmplY3Q6dnJwYXJ0eS9SRVQuZmJ4'},
+    'Model 2'       : {'urn': 'dXJuOmFkc2sub2JqZWN0czpvcy5vYmplY3Q6dnJwYXJ0eS9SRVRfcmhvLmZieA'},
+    'Model 3'       : {'urn': 'dXJuOmFkc2sub2JqZWN0czpvcy5vYmplY3Q6dnJwYXJ0eS9yaG9fbWV0YUlJX2NvbXBhcmlzb24xLmZieA'},
+    'Model 4'       : {'urn': 'dXJuOmFkc2sub2JqZWN0czpvcy5vYmplY3Q6dnJwYXJ0eS9yaG9fbWV0YUlJX2NvbXBhcmlzb24xLmZieA', 'position' : _modelPosition.set(1.070601310812627, 13.540546683603289, 34.15308925414119),'target' : _modelTarget.set(-24.600037229503926,-101.23622130485953, -176.37479949455445), 'up' : _modelUp.set(-0.05760814638944857,0.8794721478904365,-0.47245110070202395)},
+    //'Model 4'       : {'urn': 'dXJuOmFkc2sub2JqZWN0czpvcy5vYmplY3Q6dnJwYXJ0eS9yaG9fbWV0YUlJX2NvbXBhcmlzb24xLmZieA', 'position' : _modelPosition = [1.070601310812627, 13.540546683603289, 34.15308925414119],'target' : _modelTarget = [-24.600037229503926,-101.23622130485953, -176.37479949455445], 'up' : _modelUp = [-0.05760814638944857,0.8794721478904365,-0.47245110070202395]},
+    'Model 5'       : {'urn': 'dXJuOmFkc2sub2JqZWN0czpvcy5vYmplY3Q6dnJwYXJ0eS9tZXRhbGxfR2FscGhhLmZieA'}
 };
+
 var _hosts = [ 'vr-party.herokuapp.com', 'www.vrok.it' ];
 
 //
@@ -36,8 +54,15 @@ function initialize() {
         // Populate our initial UI with a set of buttons, one for each function in the Buttons object
         var panel = document.getElementById('control');
         for (var name in _default_models) {
-            var urn = _default_models[name];
-            addButton(panel, name, function(urn) { return function() { launchUrn(urn); } }(urn));
+            var urn = _default_models[name].urn;
+            if (_default_models[name].position && _default_models[name].target && _default_models[name].up) {
+                var pos = _default_models[name].position;
+                var tar = _default_models[name].target;
+                var up = _default_models[name].up;
+                addButton(panel, name, function(urn, pos, tar, up) { return function() { launchUrn(urn, pos, tar, up) } }(urn, pos, tar, up));
+            }
+            else
+                addButton(panel, name, function(urn) { return function() { launchUrn(urn); } }(urn));
         }
     
         var base_url = window.location.origin;
@@ -120,7 +145,7 @@ function addButton(panel, buttonName, loadFunction) {
 }
 
 
-function launchUrn(urn) {
+function launchUrn(urn,pos,tar,up) {
 
     var viewerToClose;
     
@@ -161,7 +186,11 @@ function launchUrn(urn) {
                     viewerToClose.finish();
                 }
                 
-                loadModel(_viewer, model);
+                if (pos && tar && up)
+                    loadModelWithInitialView(_viewer, model, pos, tar, up);
+                else {
+                    loadModel(_viewer, model);
+                }
             }
         );
     }
@@ -200,6 +229,12 @@ function onCameraChange(event) {
     }
 }
 
+function setInitialView(pos, trg, up) {
+    // Make sure our up vector is correct for this model
+    //_viewer.navigation.setWorldUpVector(_upVector, true);
+    _viewer.navigation.setView(pos, trg);
+    _viewer.navigation.setCameraUpVector(up);
+}
 
 // Translate a list of objects (for R13 & R14) to a list of IDs
 // Socket.io prefers not to have binary content to transfer, it seems

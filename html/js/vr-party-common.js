@@ -80,6 +80,22 @@ function loadModel(viewer, documentData) {
     );
 }
 
+function loadModelWithInitialView(viewer, documentData,pos, trg, up) {
+    viewer.resize();
+    viewer.load(
+        documentData,
+        null,
+        function() {
+            viewer.navigation.setZoomTowardsPivot(true);
+            viewer.navigation.setReverseZoomDirection(true);
+            viewer.setLightPreset(0);
+            viewer.navigation.setView(pos, trg);
+            viewer.navigation.setCameraUpVector(up);
+        }
+    );
+}
+
+
 
 function getModel(documentData) {
     var geometryItems = [];
