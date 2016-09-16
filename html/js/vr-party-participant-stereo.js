@@ -13,6 +13,8 @@ var _lastVert, _lastHoriz;
 var _socket = io();
 var _sessionId;
 var _rotation;
+var oldQ = new THREE.Quaternion();
+
 
 // Get the VRDisplay and save it for later.
 var _vrDisplay = null;
@@ -130,7 +132,8 @@ function launchScopedViewer(urn) {
                                 function(fn) {
                                     var pose = _vrDisplay.getPose();
                                     var quat = new THREE.Quaternion().fromArray(pose.orientation);
-                                    orbitByPose(quat);
+                                    //orbitByPose(quat);
+                                    oldQ.copy(orbitByPose(quat));
                                     _vrDisplay.requestAnimationFrame(fn);
                                 }
                             );
@@ -223,7 +226,8 @@ function launchViewer(urn) {
                         function(fn) {
                             var pose = _vrDisplay.getPose();
                             var quat = new THREE.Quaternion().fromArray(pose.orientation);
-                            orbitByPose(quat);
+                            //orbitByPose(quat);
+                            oldQ.copy(orbitByPose(quat));
                             _vrDisplay.requestAnimationFrame(fn);
                         }
                     );
@@ -517,6 +521,33 @@ function orb(e) {
 }
 
 function orbitByPose(q) {
+    
+    var curQ = q;
+    var deltaQ = new THREE.Quaternion().multiplyQuaternions(curQ,oldQ.inverse());
+    var pivotToEye = new THREE.Vector3();
+    var targetToEye = new THREE.Vector3();
+    
+    
+    var pos = _viewer.navigation.getPosition();
+    var trg = _viewer.navigation.getTarget();
+    var piv = _viewer.navigation.getPivotPoint();
+    var up = _viewer.navigation.getCameraUpVector();
+
+    pivotToEye.subVectors(pos, piv);
+    targetToEye.subVectors(pos, trg);
+    var targetDist = targetToEye.length();
+    targetToEye.normalize();
+ 
+    pivotToEye.applyQuaternion(deltaQ);
+    targetToEye.applyQuaternion(deltaQ);
+
+    up.applyQuaternion(deltaQ);     
+    pos.addVectors(piv, pivotToEye);
+    trg.subVectors(pos, targetToEye.multiplyScalar(targetDist));
+    zoom(_viewer, pos, trg, up);
+    return curQ;
+
+    /*
     var x = q.x;
     var y = q.y;
     var z = q.z;
@@ -532,6 +563,8 @@ function orbitByPose(q) {
         roll = roll + Math.PI;
     }
     orbitViews(-pitch, Math.PI + roll);
+    */
+    
 }
 
 function orbitViews(vert, horiz) {
